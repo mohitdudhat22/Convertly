@@ -1,5 +1,6 @@
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib'
 
+
 export const compressPDF = async (file) => {
   try {
     const arrayBuffer = await file.arrayBuffer();
@@ -31,11 +32,20 @@ export const protectPDF = async (file, password) => {
     const arrayBuffer = await file.arrayBuffer();
     const pdfDoc = await PDFDocument.load(arrayBuffer);
     
-    // Apply password protection
-    const protectedBytes = await pdfDoc.save({
+    // Create a new document and copy all pages
+    const protectedDoc = await PDFDocument.create();
+    const pages = await protectedDoc.copyPages(pdfDoc, pdfDoc.getPageIndices());
+    pages.forEach(page => protectedDoc.addPage(page));
+    
+    // Apply password protection with encryption
+    const protectedBytes = await protectedDoc.save({
       userPassword: password,
-      ownerPassword: password,  
-      // Additional security options
+      ownerPassword: password,
+      encryption: {
+        keyBits: 128,
+        encryptMetadata: true,
+        version: 2 // Explicitly set encryption version
+      },
       permissions: {
         printing: 'highResolution',
         modifying: false,
@@ -47,12 +57,28 @@ export const protectPDF = async (file, password) => {
       }
     });
     
+    // Try to load the protected PDF with the password to verify encryption
+    try {
+      await PDFDocument.load(protectedBytes, { 
+        ignoreEncryption: false,
+        password: password 
+      });
+    } catch (verificationError) {
+      console.error('Verification error:', verificationError);
+      // If we can load it without a password, encryption failed
+      const unprotectedTest = await PDFDocument.load(protectedBytes, { 
+        ignoreEncryption: true 
+      });
+      if (!unprotectedTest.isEncrypted) {
+        throw new Error('Encryption verification failed');
+      }
+    }
+    
     // Create and return the protected PDF blob
-    const protectedPDF = new Blob([protectedBytes], { type: 'application/pdf' });
-    return protectedPDF;
+    return new Blob([protectedBytes], { type: 'application/pdf' });
 
   } catch (error) {
-    // Provide more specific error messages
+    console.error('Full error:', error);
     if (error.message.includes('Invalid PDF')) {
       throw new Error('The file appears to be corrupted or is not a valid PDF');
     }

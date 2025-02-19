@@ -25,11 +25,11 @@ const PDFTools = () => {
     { icon: Icons.compress, title: "Compress PDF", description: "Reduce file size without losing quality", path: "/compress" },
     { icon: Icons.protect, title: "Protect PDF", description: "Add passwords and encrypt your PDFs", path: "/protect" },
     { icon: Icons.pdfTojpg, title: "PDF to JPG", description: "Convert PDF pages into high-quality images", path: "/pdf-to-jpg" },
-    { icon: Icons.jpgTopdf, title: "JPG to PDF", description: "Turn images into a PDF file", path: "/jpg-to-pdf" },
-    { icon: Icons.split, title: "Split PDF", description: "Extract specific pages or split large PDFs into multiple files", path: "/split" },
-    { icon: Icons.merge, title: "Merge PDF", description: "Combine multiple PDFs into one document", path: "/merge" },
+    { icon: Icons.jpgTopdf, title: "JPG to PDF", description: "Turn images into a PDF file", path: "/jpg-to-pdf" }, //Done
+    { icon: Icons.split, title: "Split PDF", description: "Extract specific pages or split large PDFs into multiple files", path: "/split" }, //Done
+    { icon: Icons.merge, title: "Merge PDF", description: "Combine multiple PDFs into one document", path: "/merge" }, // Done
     { icon: Icons.pdftoWord, title: "PDF to Word", description: "Convert PDFs into fully editable Word documents", path: "/pdf-to-word" },
-    { icon: Icons.extract, title: "Extract Pages", description: "Get a new document containing only the desired pages", path: "/extract" },
+    { icon: Icons.extract, title: "Extract Pages", description: "Get a new document containing only the desired pages", path: "/extract" }, // Done
   ];
 
   return (
