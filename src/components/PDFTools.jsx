@@ -20,6 +20,18 @@ const ToolCard = ({ icon, title, description, path }) => {
 const PDFTools = () => {
   const navigate = useNavigate();
 
+  const tools = [
+    { icon: Icons.pdf, title: "Edit PDF", description: "Modify text, images, and links in your PDFs", path: "/edit" },
+    { icon: Icons.compress, title: "Compress PDF", description: "Reduce file size without losing quality", path: "/compress" },
+    { icon: Icons.protect, title: "Protect PDF", description: "Add passwords and encrypt your PDFs", path: "/protect" },
+    { icon: Icons.pdfTojpg, title: "PDF to JPG", description: "Convert PDF pages into high-quality images", path: "/pdf-to-jpg" },
+    { icon: Icons.jpgTopdf, title: "JPG to PDF", description: "Turn images into a PDF file", path: "/jpg-to-pdf" },
+    { icon: Icons.split, title: "Split PDF", description: "Extract specific pages or split large PDFs into multiple files", path: "/split" },
+    { icon: Icons.merge, title: "Merge PDF", description: "Combine multiple PDFs into one document", path: "/merge" },
+    { icon: Icons.pdftoWord, title: "PDF to Word", description: "Convert PDFs into fully editable Word documents", path: "/pdf-to-word" },
+    { icon: Icons.extract, title: "Extract Pages", description: "Get a new document containing only the desired pages", path: "/extract" },
+  ];
+
   return (
     <div className="max-w-6xl mx-auto px-4 py-12">
       <h1 className="text-3xl font-bold text-center mb-12">
@@ -27,60 +39,15 @@ const PDFTools = () => {
       </h1>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <ToolCard
-          icon={Icons.pdf}
-          title="Edit PDF"
-          description="Modify text, images, and links in your PDFs"
-          path="/edit"
-        />
-        <ToolCard
-          icon={Icons.compress}
-          title="Compress PDF"
-          description="Reduce file size without losing quality"
-          path="/compress"
-        />
-        <ToolCard
-          icon={Icons.protect}
-          title="Protect PDF"
-          description="Add passwords and encrypt your PDFs"
-          path="/protect"
-        />
-        <ToolCard
-          icon={Icons.pdfTojpg}
-          title="PDF to JPG"
-          description="Convert PDF pages into high-quality images"
-          path="/pdf-to-jpg"
-        />
-        <ToolCard
-          icon={Icons.jpgTopdf}
-          title="JPG to PDF"
-          description="Turn images into a PDF file"
-          path="/jpg-to-pdf"
-        />
-        <ToolCard
-          icon={Icons.split}
-          title="Split PDF"
-          description="Extract specific pages or split large PDFs into multiple files"
-          path="/split"
-        />
-        <ToolCard
-          icon={Icons.merge}
-          title="Merge PDF"
-          description="Combine multiple PDFs into one document"
-          path="/merge"
-        />
-        <ToolCard
-          icon={Icons.pdftoWord}
-          title="PDF to Word"
-          description="Convert PDFs into fully editable Word documents"
-          path="/pdf-to-word"
-        />
-        <ToolCard
-          icon={Icons.extract}
-          title="Extract Pages"
-          description="Get a new document containing only the desired pages"
-          path="/extract"
-        />
+        {tools.map((tool, index) => (
+          <ToolCard
+            key={index}
+            icon={tool.icon}
+            title={tool.title}
+            description={tool.description}
+            path={tool.path}
+          />
+        ))}
       </div>
 
       <div className="text-center mt-8">
