@@ -57,8 +57,6 @@ const PDFToWord = () => {
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
-      <h1 className="text-2xl font-bold mb-2">PDF to Word</h1>
-      <p className="text-gray-600 mb-6">Convert PDF to editable Word document</p>
       <button
         onClick={() => document.getElementById('file-input').click()}
         className="bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600 mb-4"
@@ -71,13 +69,9 @@ const PDFToWord = () => {
 
   const renderProcessingView = () => (
     <div className="max-w-4xl mx-auto p-4">
-      <div className="text-center mb-8">
-        <h1 className="text-2xl font-bold mb-2">PDF to Word</h1>
-        <p className="text-gray-600">Selected file: {file?.name}</p>
-      </div>
-
       <div className="mb-6">
-        <div className="bg-blue-50 border border-blue-200 rounded p-4 mb-4">
+        <p className="text-gray-600">Selected file: {file?.name}</p>
+        <div className="bg-blue-50 border border-blue-200 rounded p-4 mt-4">
           <p className="text-sm text-blue-800">
             Converting PDF to Word maintains the layout while making the text editable.
             The conversion process may take a few moments depending on the file size.
