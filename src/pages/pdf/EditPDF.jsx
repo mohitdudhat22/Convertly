@@ -1,8 +1,7 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import PDFToolLayout from '@/components/PDFToolLayout';
-import { useFileOperation } from '@/hooks/useFileOperation';
-import Icons from '@/Icons';
 import { Document, Page, pdfjs } from 'react-pdf';
+import Icons from '@/Icons';
 
 // Configure PDF.js worker
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
@@ -10,6 +9,7 @@ pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/$
 const EditPDF = () => {
   const [currentView, setCurrentView] = useState('initial');
   const [file, setFile] = useState(null);
+  const [isDragging, setIsDragging] = useState(false);
   const [numPages, setNumPages] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [scale, setScale] = useState(1.0);
@@ -23,6 +23,30 @@ const EditPDF = () => {
     { id: 'highlight', name: 'Highlight', icon: Icons?.highlight },
     { id: 'shape', name: 'Add Shape', icon: Icons?.shape },
   ];
+
+  const handleDragOver = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  }, []);
+
+  const handleDrop = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const droppedFile = e.dataTransfer.files[0];
+    if (droppedFile && droppedFile.type === 'application/pdf') {
+      setFile(droppedFile);
+      setCurrentView('editing');
+    }
+  }, []);
 
   const handleDocumentLoadSuccess = ({ numPages }) => {
     setNumPages(numPages);
@@ -52,9 +76,14 @@ const EditPDF = () => {
   };
 
   const renderInitialView = () => (
-    <div className="text-center">
-      <h1 className="text-2xl font-bold mb-2">Edit PDF Online</h1>
-      <p className="text-gray-600 mb-6">Modify your PDF files easily</p>
+    <div
+      className={`text-center p-12 border-2 border-dashed rounded-lg transition-colors
+        ${isDragging ? 'border-blue-500 bg-blue-50' : 'border-gray-300'}
+        ${isDragging ? 'animate-pulse' : ''}`}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
       <button
         onClick={() => document.getElementById('file-input').click()}
         className="bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600 mb-4"
@@ -67,37 +96,41 @@ const EditPDF = () => {
 
   const renderEditingView = () => (
     <div className="max-w-6xl mx-auto p-4">
-      <div className="flex gap-4 mb-4">
-        {tools.map((tool) => (
-          <button
-            key={tool.id}
-            onClick={() => handleToolSelect(tool.id)}
-            className={`p-2 rounded ${
-              selectedTool === tool.id ? 'bg-blue-500 text-white' : 'bg-gray-100'
-            }`}
-          >
-            <tool.icon className="w-6 h-6" />
-            <span className="text-sm">{tool.name}</span>
-          </button>
-        ))}
-      </div>
-
       <div className="flex gap-4">
-        <div className="flex-1 border rounded-lg p-4">
-          <Document
-            file={file}
-            onLoadSuccess={handleDocumentLoadSuccess}
-            className="pdf-document"
-          >
-            <div className="relative" onClick={handleAnnotation} ref={canvasRef}>
+        <div className="flex-grow bg-white rounded-lg shadow-sm">
+          <div className="border-b p-4">
+            <div className="flex gap-2">
+              {tools.map((tool) => (
+                <button
+                  key={tool.id}
+                  onClick={() => handleToolSelect(tool.id)}
+                  className={`p-2 rounded flex items-center gap-2 transition-colors ${
+                    selectedTool === tool.id 
+                      ? 'bg-blue-500 text-white' 
+                      : 'bg-gray-100 hover:bg-gray-200'
+                  }`}
+                >
+                  {tool.icon && <tool.icon className="w-5 h-5" />}
+                  <span className="text-sm">{tool.name}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="relative overflow-auto p-4" ref={canvasRef} onClick={handleAnnotation}>
+            <Document
+              file={file}
+              onLoadSuccess={handleDocumentLoadSuccess}
+              className="mx-auto"
+            >
               <Page
                 pageNumber={currentPage}
                 scale={scale}
-                className="pdf-page"
+                className="shadow-lg"
               />
               {annotations
-                .filter((ann) => ann.page === currentPage)
-                .map((annotation) => (
+                .filter(ann => ann.page === currentPage)
+                .map(annotation => (
                   <div
                     key={annotation.id}
                     className="absolute"
@@ -109,36 +142,36 @@ const EditPDF = () => {
                     {/* Render annotation based on tool type */}
                   </div>
                 ))}
-            </div>
-          </Document>
+            </Document>
+          </div>
         </div>
 
-        <div className="w-64 border rounded-lg p-4">
-          <div className="mb-4">
-            <h3 className="font-bold mb-2">Page Navigation</h3>
-            <div className="flex gap-2 items-center">
+        <div className="w-64 bg-white rounded-lg shadow-sm p-4 space-y-6">
+          <div>
+            <h3 className="font-medium mb-2">Page Navigation</h3>
+            <div className="flex items-center justify-between gap-2">
               <button
                 onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                 disabled={currentPage <= 1}
-                className="px-2 py-1 bg-gray-100 rounded"
+                className="px-3 py-1 bg-gray-100 rounded hover:bg-gray-200 disabled:opacity-50"
               >
                 Previous
               </button>
-              <span>
+              <span className="text-sm">
                 Page {currentPage} of {numPages}
               </span>
               <button
                 onClick={() => setCurrentPage(Math.min(numPages, currentPage + 1))}
                 disabled={currentPage >= numPages}
-                className="px-2 py-1 bg-gray-100 rounded"
+                className="px-3 py-1 bg-gray-100 rounded hover:bg-gray-200 disabled:opacity-50"
               >
                 Next
               </button>
             </div>
           </div>
 
-          <div className="mb-4">
-            <h3 className="font-bold mb-2">Zoom</h3>
+          <div>
+            <h3 className="font-medium mb-2">Zoom</h3>
             <input
               type="range"
               min="0.5"
@@ -148,6 +181,9 @@ const EditPDF = () => {
               onChange={(e) => setScale(parseFloat(e.target.value))}
               className="w-full"
             />
+            <div className="text-center text-sm text-gray-600 mt-1">
+              {Math.round(scale * 100)}%
+            </div>
           </div>
         </div>
       </div>
@@ -158,9 +194,14 @@ const EditPDF = () => {
     <PDFToolLayout
       title="Edit PDF"
       description="Modify your PDF files easily"
-      icon={Icons.pdf}
+      icon={Icons.edit}
     >
-      <div className="flex-grow flex items-center justify-center p-4">
+      <div 
+        className="flex-grow flex items-center justify-center p-4"
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
         {currentView === 'initial' && renderInitialView()}
         {currentView === 'editing' && renderEditingView()}
         
@@ -168,8 +209,11 @@ const EditPDF = () => {
           type="file"
           accept=".pdf"
           onChange={(e) => {
-            setFile(e.target.files[0]);
-            setCurrentView('editing');
+            const selectedFile = e.target.files[0];
+            if (selectedFile) {
+              setFile(selectedFile);
+              setCurrentView('editing');
+            }
           }}
           className="hidden"
           id="file-input"
