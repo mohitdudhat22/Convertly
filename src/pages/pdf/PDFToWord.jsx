@@ -1,32 +1,62 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import PDFToolLayout from '@/components/PDFToolLayout';
 import { useFileOperation } from '@/hooks/useFileOperation';
+import { convertPDFToWord } from '@/utils/pdfUtils';
 import Icons from '@/Icons';
 
 const PDFToWord = () => {
   const [currentView, setCurrentView] = useState('initial');
   const [file, setFile] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const { execute, loading, error } = useFileOperation(convertPDFToWord);
+
+  const handleDragOver = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  }, []);
+
+  const handleDrop = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const droppedFile = e.dataTransfer.files[0];
+    if (droppedFile && droppedFile.type === 'application/pdf') {
+      setFile(droppedFile);
+      setCurrentView('processing');
+    }
+  }, []);
 
   const handleConvert = async () => {
-    setLoading(true);
-    setError(null);
-    
     try {
-      // Note: PDF to Word conversion typically requires server-side processing
-      // This is a placeholder for the actual implementation
-      alert('PDF to Word conversion requires server-side processing. This is a demo interface.');
+      const wordDoc = await execute(file);
+      const url = URL.createObjectURL(wordDoc);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = file.name.replace('.pdf', '.docx');
+      a.click();
+      URL.revokeObjectURL(url);
     } catch (err) {
-      setError(err.message);
       console.error('Conversion failed:', err);
-    } finally {
-      setLoading(false);
     }
   };
 
   const renderInitialView = () => (
-    <div className="text-center">
+    <div
+      className={`text-center p-12 border-2 border-dashed rounded-lg transition-colors
+        ${isDragging ? 'border-blue-500 bg-blue-50' : 'border-gray-300'}
+        ${isDragging ? 'animate-pulse' : ''}`}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
       <h1 className="text-2xl font-bold mb-2">PDF to Word</h1>
       <p className="text-gray-600 mb-6">Convert PDF to editable Word document</p>
       <button
@@ -79,7 +109,12 @@ const PDFToWord = () => {
       description="Convert PDF to editable Word document"
       icon={Icons.pdftoWord}
     >
-      <div className="flex-grow flex items-center justify-center p-4">
+      <div 
+        className="flex-grow flex items-center justify-center p-4"
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
         {currentView === 'initial' && renderInitialView()}
         {currentView === 'processing' && renderProcessingView()}
         
@@ -87,8 +122,11 @@ const PDFToWord = () => {
           type="file"
           accept=".pdf"
           onChange={(e) => {
-            setFile(e.target.files[0]);
-            setCurrentView('processing');
+            const selectedFile = e.target.files[0];
+            if (selectedFile) {
+              setFile(selectedFile);
+              setCurrentView('processing');
+            }
           }}
           className="hidden"
           id="file-input"

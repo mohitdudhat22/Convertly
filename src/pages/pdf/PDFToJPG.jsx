@@ -11,16 +11,13 @@ const PDFToJPG = () => {
 
   const handleConvert = async () => {
     try {
-      const images = await execute(file);
-      // Download each image
-      images.forEach((blob, index) => {
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `page_${index + 1}.jpg`;
-        a.click();
-        URL.revokeObjectURL(url);
-      });
+      const zipBlob = await execute(file);
+      const url = URL.createObjectURL(zipBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${file.name.replace('.pdf', '')}_images.zip`;
+      a.click();
+      URL.revokeObjectURL(url);
     } catch (err) {
       console.error('Conversion failed:', err);
     }

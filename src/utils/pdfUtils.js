@@ -1,18 +1,24 @@
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib'
 
+const API_BASE_URL = import.meta.env.VITE_BASE_API;
 
 export const compressPDF = async (file) => {
   try {
-    const arrayBuffer = await file.arrayBuffer();
-    const pdfDoc = await PDFDocument.load(arrayBuffer);
-    
-    // Basic compression by copying pages to a new document
-    const compressedPdf = await PDFDocument.create();
-    const pages = await compressedPdf.copyPages(pdfDoc, pdfDoc.getPageIndices());
-    pages.forEach(page => compressedPdf.addPage(page));
-    
-    const compressedBytes = await compressedPdf.save({ useObjectStreams: true });
-    return new Blob([compressedBytes], { type: 'application/pdf' });
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('compression_mode', 'medium');
+
+    const response = await fetch(`${API_BASE_URL}/compress/`, {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Compression failed');
+    }
+
+    return await response.blob();
   } catch (error) {
     throw new Error('Error compressing PDF: ' + error.message);
   }
@@ -20,68 +26,22 @@ export const compressPDF = async (file) => {
 
 export const protectPDF = async (file, password) => {
   try {
-    // Validate inputs
-    if (!file) {
-      throw new Error('No file provided');
-    }
-    if (!password || password.length < 1) {
-      throw new Error('Password is required');
-    }
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('password', password);
 
-    // Read the PDF file
-    const arrayBuffer = await file.arrayBuffer();
-    const pdfDoc = await PDFDocument.load(arrayBuffer);
-    
-    // Create a new document and copy all pages
-    const protectedDoc = await PDFDocument.create();
-    const pages = await protectedDoc.copyPages(pdfDoc, pdfDoc.getPageIndices());
-    pages.forEach(page => protectedDoc.addPage(page));
-    
-    // Apply password protection with encryption
-    const protectedBytes = await protectedDoc.save({
-      userPassword: password,
-      ownerPassword: password,
-      encryption: {
-        keyBits: 128,
-        encryptMetadata: true,
-        version: 2 // Explicitly set encryption version
-      },
-      permissions: {
-        printing: 'highResolution',
-        modifying: false,
-        copying: false,
-        annotating: false,
-        fillingForms: true,
-        contentAccessibility: true,
-        documentAssembly: false
-      }
+    const response = await fetch(`${API_BASE_URL}/protect/`, {
+      method: 'POST',
+      body: formData,
     });
-    
-    // Try to load the protected PDF with the password to verify encryption
-    try {
-      await PDFDocument.load(protectedBytes, { 
-        ignoreEncryption: false,
-        password: password 
-      });
-    } catch (verificationError) {
-      console.error('Verification error:', verificationError);
-      // If we can load it without a password, encryption failed
-      const unprotectedTest = await PDFDocument.load(protectedBytes, { 
-        ignoreEncryption: true 
-      });
-      if (!unprotectedTest.isEncrypted) {
-        throw new Error('Encryption verification failed');
-      }
-    }
-    
-    // Create and return the protected PDF blob
-    return new Blob([protectedBytes], { type: 'application/pdf' });
 
-  } catch (error) {
-    console.error('Full error:', error);
-    if (error.message.includes('Invalid PDF')) {
-      throw new Error('The file appears to be corrupted or is not a valid PDF');
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Protection failed');
     }
+
+    return await response.blob();
+  } catch (error) {
     throw new Error('Failed to protect PDF: ' + error.message);
   }
 }
@@ -101,8 +61,45 @@ export const isPDFProtected = async (file) => {
 }
 
 export const convertPDFToJPG = async (file) => {
-  // This would require a server-side implementation or a PDF rendering library
-  throw new Error('PDF to JPG conversion requires server-side processing');
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await fetch(`${API_BASE_URL}/convert/`, {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Conversion failed');
+    }
+
+    return await response.blob();
+  } catch (error) {
+    throw new Error('Error converting PDF to JPG: ' + error.message);
+  }
+}
+
+export const convertPDFToWord = async (file) => {
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await fetch(`${API_BASE_URL}/convert/pdf-to-word/`, {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Conversion failed');
+    }
+
+    return await response.blob();
+  } catch (error) {
+    throw new Error('Error converting PDF to Word: ' + error.message);
+  }
 }
 
 export const mergePDFs = async (files) => {
@@ -198,8 +195,4 @@ export const convertImagesToPDF = async (files, options = {}) => {
   } catch (error) {
     throw new Error('Error converting images to PDF: ' + error.message);
   }
-}
-
-export const convertPDFToWord = async (file) => {
-  // PDF to Word conversion logic
 } 
