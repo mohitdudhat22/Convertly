@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import PDFToolLayout from '@/components/PDFToolLayout';
 import { useFileOperation } from '@/hooks/useFileOperation';
 import { convertImagesToPDF } from '@/utils/pdfUtils';
@@ -13,6 +13,7 @@ const JpgToPdf = () => {
   const [margin, setMargin] = useState('none');
   const [mergeAll, setMergeAll] = useState(true);
   const { execute, loading, error } = useFileOperation(convertImagesToPDF);
+  const [imageUrls, setImageUrls] = useState([]);
 
   const pageSizeOptions = ['A4', 'Letter', 'Legal', 'A3'];
 
@@ -38,6 +39,8 @@ const JpgToPdf = () => {
     );
     if (droppedFiles.length > 0) {
       setFiles(prev => [...prev, ...droppedFiles]);
+      const newUrls = droppedFiles.map(file => URL.createObjectURL(file));
+      setImageUrls(prev => [...prev, ...newUrls]);
       setCurrentView('editing');
     }
   }, []);
@@ -45,11 +48,21 @@ const JpgToPdf = () => {
   const handleFileAdd = (e) => {
     const newFiles = Array.from(e.target.files);
     setFiles(prev => [...prev, ...newFiles]);
+    const newUrls = newFiles.map(file => URL.createObjectURL(file));
+    setImageUrls(prev => [...prev, ...newUrls]);
   };
 
   const removeFile = (index) => {
+    URL.revokeObjectURL(imageUrls[index]);
     setFiles(prev => prev.filter((_, i) => i !== index));
+    setImageUrls(prev => prev.filter((_, i) => i !== index));
   };
+
+  useEffect(() => {
+    return () => {
+      imageUrls.forEach(url => URL.revokeObjectURL(url));
+    };
+  }, [imageUrls]);
 
   const handleConvert = async () => {
     try {
@@ -105,7 +118,7 @@ const JpgToPdf = () => {
           {files.map((file, index) => (
             <div key={index} className="relative group">
               <img
-                src={URL.createObjectURL(file)}
+                src={imageUrls[index]}
                 alt={file.name}
                 className="w-full h-32 object-cover rounded-lg shadow-sm"
               />

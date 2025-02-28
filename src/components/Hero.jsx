@@ -1,6 +1,8 @@
 import React from 'react'
 import image1 from '@/assets/image-1.png'
+import { useNavigate } from 'react-router-dom'
 const Hero = () => {
+  const navigate = useNavigate()
   return (
     <div className="max-w-6xl mx-auto px-4 py-16 flex flex-col md:flex-row items-center justify-between">
       <div className="md:w-1/2 mb-8 md:mb-0">
@@ -21,7 +23,7 @@ const Hero = () => {
         <p className="text-gray-600 mb-8">
           Make quick edits, highlight important text, and add annotations with ease.
         </p>
-        <button className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors inline-flex items-center">
+        <button className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors inline-flex items-center" onClick={() => navigate('/edit')}>
           Start Editing Now
           <svg className="w-4 h-4 ml-2" viewBox="0 0 24 24" fill="none">
             <path d="M9 6L15 12L9 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
