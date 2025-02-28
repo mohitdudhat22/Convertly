@@ -7,15 +7,27 @@ import Icons from '@/Icons';
 const JpgToPdf = () => {
   const [currentView, setCurrentView] = useState('initial');
   const [files, setFiles] = useState([]);
+  const [imageUrls, setImageUrls] = useState([]);
   const [isDragging, setIsDragging] = useState(false);
   const [pageSize, setPageSize] = useState('A4');
   const [orientation, setOrientation] = useState('portrait');
   const [margin, setMargin] = useState('none');
   const [mergeAll, setMergeAll] = useState(true);
   const { execute, loading, error } = useFileOperation(convertImagesToPDF);
-  const [imageUrls, setImageUrls] = useState([]);
 
   const pageSizeOptions = ['A4', 'Letter', 'Legal', 'A3'];
+
+  // Create and manage URLs for the images
+  useEffect(() => {
+    // Create URLs for all files
+    const urls = files.map(file => URL.createObjectURL(file));
+    setImageUrls(urls);
+    
+    // Clean up function to revoke object URLs when component unmounts or files change
+    return () => {
+      urls.forEach(url => URL.revokeObjectURL(url));
+    };
+  }, [files]);
 
   const handleDragOver = useCallback((e) => {
     e.preventDefault();
@@ -39,30 +51,26 @@ const JpgToPdf = () => {
     );
     if (droppedFiles.length > 0) {
       setFiles(prev => [...prev, ...droppedFiles]);
-      const newUrls = droppedFiles.map(file => URL.createObjectURL(file));
-      setImageUrls(prev => [...prev, ...newUrls]);
       setCurrentView('editing');
     }
   }, []);
 
   const handleFileAdd = (e) => {
-    const newFiles = Array.from(e.target.files);
-    setFiles(prev => [...prev, ...newFiles]);
-    const newUrls = newFiles.map(file => URL.createObjectURL(file));
-    setImageUrls(prev => [...prev, ...newUrls]);
+    const newFiles = Array.from(e.target.files).filter(
+      file => file.type.startsWith('image/')
+    );
+    if (newFiles.length > 0) {
+      setFiles(prev => [...prev, ...newFiles]);
+    }
   };
 
   const removeFile = (index) => {
-    URL.revokeObjectURL(imageUrls[index]);
-    setFiles(prev => prev.filter((_, i) => i !== index));
-    setImageUrls(prev => prev.filter((_, i) => i !== index));
+    setFiles(prev => {
+      const newFiles = [...prev];
+      newFiles.splice(index, 1);
+      return newFiles;
+    });
   };
-
-  useEffect(() => {
-    return () => {
-      imageUrls.forEach(url => URL.revokeObjectURL(url));
-    };
-  }, [imageUrls]);
 
   const handleConvert = async () => {
     try {
@@ -117,11 +125,17 @@ const JpgToPdf = () => {
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
           {files.map((file, index) => (
             <div key={index} className="relative group">
-              <img
-                src={imageUrls[index]}
-                alt={file.name}
-                className="w-full h-32 object-cover rounded-lg shadow-sm"
-              />
+              <div className="w-full h-32 bg-gray-200 rounded-lg overflow-hidden">
+                <img
+                  src={imageUrls[index]}
+                  alt={file.name}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2VlZWVlZSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMzAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiIGZpbGw9IiM5OTk5OTkiPkltYWdlPC90ZXh0Pjwvc3ZnPg==';
+                  }}
+                />
+              </div>
               <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all rounded-lg flex items-center justify-center">
                 <button
                   onClick={() => removeFile(index)}
@@ -277,4 +291,4 @@ const JpgToPdf = () => {
   );
 };
 
-export default JpgToPdf; 
+export default JpgToPdf;
